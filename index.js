@@ -28,8 +28,12 @@ function fetch_data(word, callback) {
             var $ = cheerio.load(html);
             var difficulty = $('#difficulty-box').attr("data-difficulty");
             var definition = $('.def-content').first().text();
-            difficulty_cache[word] = difficulty;
-            definition_cache[word] = definition;
+            //if(difficulty) {
+            //    difficulty_cache[word] = difficulty;
+            //}
+            //if(definition) {
+            //    definition_cache[word] = definition;
+            //}
             var data = {"difficulty": difficulty, "definition": definition};
             callback(data);
         }
