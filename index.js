@@ -88,7 +88,7 @@ function fetch_synonym(word, callback) {
 
             /* If no synonyms found at all, return empty string */
             if (synonyms.length === 0) {
-                return resp.json({'synonym': ''});
+                callback(null);
             }
 
             /* Get least difficult synonym out of list. */
