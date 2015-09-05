@@ -12,22 +12,51 @@ app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
 
 app.get('/', function(request, response) {
-  response.render('pages/index');
+    response.render('pages/index');
 });
 
-app.get('/get_difficulty', function(req, resp) {
-    url = "http://dictionary.reference.com/browse/" + req.query.word;
+var difficulty_cache = {};
+
+function get_difficulty(word, callback) {
+    if(difficulty_cache[word] !== undefined) {
+        callback(difficulty_cache[word]);
+    }
+
+    var url = "http://dictionary.reference.com/browse/" + word;
 
     request(url, function(error, inner_resp, html){
         if(!error){
             var $ = cheerio.load(html);
             var difficulty = $('#difficulty-box').attr("data-difficulty");
-            resp.json({"difficulty": difficulty});
+            difficulty_cache[word] = difficulty;
+            callback(difficulty);
         }
         else {
-            resp.json({"error": error});
+            callback(null);
         }
     });
+}
+
+app.get('/get_difficulty', function(req, resp) {
+    get_difficulty(req.query.word, function(difficulty) {
+        resp.json({"difficulty": difficulty});
+    });
+});
+
+app.get('/get_difficulties', function(req, resp) {
+    var words = JSON.parse(req.query.words);
+    var dict = {};
+    var count = 0;
+    for(var i=0; i<words.length; i++) {
+        get_difficulty(words[i], (function(index) { return function(difficulty) {
+            dict[words[index]] = difficulty;
+            count++;
+            if(count == words.length) {
+                // all results ready
+                resp.json(dict);
+            }
+        } })(i));
+    }
 });
 
 // TODO: Figure out better way to get best synonym -- for example, the word
