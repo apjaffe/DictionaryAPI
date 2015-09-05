@@ -1,8 +1,5 @@
 var express = require('express');
-var request = require('request');
-var cheerio = require('cheerio');
-var app = express();
-
+var request = require('request'); var cheerio = require('cheerio'); var app = express();
 app.set('port', (process.env.PORT || 5000));
 
 app.use(express.static(__dirname + '/public'));
@@ -90,12 +87,13 @@ app.get('/get_difficulties', function(req, resp) {
 });
 
 /* Input: word
- * Output: {synonym: (synonym of word with low difficulty rating) }
+ * Output: {synonym: (synonym of word with low difficulty rating
+ *                    OR empty string if no synonyms found) }
  * TODO: Figure out better way to get best synonym -- for example, the word
  *       "hit" can be either a verb or a noun
  */
 app.get('/get_synonym', function(req, resp) {
-  url = "http://www.thesaurus.com/browse/" + req.query.word;
+  url = 'http://www.thesaurus.com/browse/' + req.query.word;
 
   request(url, function(error, inner_resp, html){
     if(!error) {
@@ -108,6 +106,18 @@ app.get('/get_synonym', function(req, resp) {
       }).each(function(idx, elem) {
         synonyms[idx] = $(this).find('.text').text();
       });
+
+      /* If no highly relevant synonyms found, just get any synonyms */
+      if (synonyms.length === 0) {
+        $('.relevancy-list ul').find('li .text').each(function(idx, elem) {
+          synonyms[idx] = $(this).text();
+        });
+      }
+
+      /* If no synonyms found at all, return empty string */
+      if (synonyms.length === 0) {
+        return resp.json({'synonym': ''});
+      }
 
       /* Get least difficult synonym out of list. */
       /* JS, what the fuck? */
@@ -123,13 +133,13 @@ app.get('/get_synonym', function(req, resp) {
 
           count++;
           if (count === synonyms.length) {
-            resp.json({"synonym": min_difficult_synonym});
+            resp.json({'synonym': min_difficult_synonym});
           }
         }})(i));
       }
     }
     else {
-      resp.json({"error": error});
+      resp.json({'error': error});
     }
   });
 });
