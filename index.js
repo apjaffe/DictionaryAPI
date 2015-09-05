@@ -68,10 +68,32 @@ app.get('/get_synonym', function(req, resp) {
     if(!error) {
       var $ = cheerio.load(html);
       var synonyms = [];
-      $('.relevancy-list ul').find('li .text').each(function(idx, elem) {
-        synonyms[idx] = $(this).text()
+
+      /* Populate 'synonyms' with all synonyms of highest relevance */
+      $('.relevancy-list ul').find('li a').filter(function(idx, elem) {
+        return JSON.parse($(this).attr('data-category')).name === 'relevant-3';
+      }).each(function(idx, elem) {
+        synonyms[idx] = $(this).find('.text').text();
       });
-      resp.json({"synonyms": synonyms});
+
+      /* Get least difficult synonym out of list. */
+      /* JS, what the fuck? */
+      var min_difficult_synonym;
+      var min_difficulty = Infinity;
+      var count = 0;
+      for (i = 0; i < synonyms.length; i++) {
+        get_difficulty(synonyms[i], (function(idx) { return function(difficulty) {
+          if (difficulty < min_difficulty) {
+            min_difficulty = difficulty;
+            min_difficult_synonym = synonyms[idx];
+          }
+
+          count++;
+          if (count === synonyms.length) {
+            resp.json({"synonym": min_difficult_synonym});
+          }
+        }})(i));
+      }
     }
     else {
       resp.json({"error": error});
