@@ -186,6 +186,20 @@ app.get('/get_synonym', function(req, resp) {
     });
 });
 
+app.post('/get_synonyms', function(req, resp) {
+    var words = JSON.parse(req.body.words);
+    var dict = {};
+    var count = 0;
+    for (var i = 0; i < words.length; i++) {
+        get_synonym(words[i], (function(index) { return function(synonym) {
+            dict[words[index]] = synonym;
+            count++;
+            if (count === words.length) {
+                resp.json(dict);
+            }
+        }})(i));
+    }
+});
 
 //Use post requests to handle large numbers of words
 app.post('/get_definitions', function(req, resp) {
