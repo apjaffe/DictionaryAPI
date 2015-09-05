@@ -1,5 +1,8 @@
 var express = require('express');
-var request = require('request'); var cheerio = require('cheerio'); var app = express();
+var request = require('request'); 
+var cheerio = require('cheerio'); 
+var async = require('async');
+var app = express();
 app.set('port', (process.env.PORT || 5000));
 
 var bodyParser = require('body-parser')
@@ -8,7 +11,7 @@ app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
   extended: true
 })); 
 
-app.use(express.static(__dirname + '/public'));
+//app.use(express.static(__dirname + '/public'));
 
 // views is directory for all template files
 app.set('views', __dirname + '/views');
@@ -21,6 +24,12 @@ app.get('/', function(request, response) {
 var difficulty_cache = {};
 var definition_cache = {};
 
+var queue = async.queue(fetch_data, 10); // Run ten simultaneous scrapes
+
+queue.drain = function() {
+    console.log("All data is fetched");
+};
+
 function fetch_data(word, callback) {
     var url = "http://dictionary.reference.com/browse/" + word;
     request(url, function(error, inner_resp, html){
@@ -28,12 +37,12 @@ function fetch_data(word, callback) {
             var $ = cheerio.load(html);
             var difficulty = $('#difficulty-box').attr("data-difficulty");
             var definition = $('.def-content').first().text();
-            //if(difficulty) {
-            //    difficulty_cache[word] = difficulty;
-            //}
-            //if(definition) {
-            //    definition_cache[word] = definition;
-            //}
+            if(difficulty) {
+                difficulty_cache[word] = difficulty;
+            }
+            if(definition) {
+                definition_cache[word] = definition;
+            }
             var data = {"difficulty": difficulty, "definition": definition};
             callback(data);
         }
@@ -49,8 +58,8 @@ function get_definition(word, callback) {
         callback(definition_cache[word]);
     }
     else {
-        fetch_data(word, function(data) {
-            callback(data.definition);
+        queue.push(word, function(data) {
+            callback(definition_cache[word]);
         });
     }
 }
@@ -61,8 +70,8 @@ function get_difficulty(word, callback) {
         callback(difficulty_cache[word]);
     }
     else {
-        fetch_data(word, function(data) {
-            callback(data.difficulty);
+        queue.push(word, function(data) {
+            callback(difficulty_cache[word]);
         });
     }
 }

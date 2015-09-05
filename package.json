@@ -11,7 +11,8 @@
     "express": "4.13.3",
     "request"    : "latest",
     "cheerio"    : "latest",
-    "body-parser" : "latest"
+    "body-parser" : "latest",
+    "async" : "latest"
   },
   "engines": {
     "node": "0.12.7"
