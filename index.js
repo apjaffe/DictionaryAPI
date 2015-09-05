@@ -23,14 +23,19 @@ app.get('/', function(request, response) {
 
 var difficulty_cache = {};
 var definition_cache = {};
+var synonym_cache = {};
 
-var queue = async.queue(fetch_data, 10); // Run ten simultaneous scrapes
+var dictionary_queue = async.queue(fetch_dictionary_data, 10); // Run ten simultaneous scrapes
+var synonym_queue = async.queue(fetch_synonym, 10);
 
-queue.drain = function() {
-    console.log("All data is fetched");
+dictionary_queue.drain = function() {
+    console.log("All dictionary data is fetched");
+};
+synonym_queue.drain = function() {
+    console.log("All synonym data is fetched");
 };
 
-function fetch_data(word, callback) {
+function fetch_dictionary_data(word, callback) {
     var url = "http://dictionary.reference.com/browse/" + word;
     request(url, function(error, inner_resp, html){
         if(!error){
@@ -50,70 +55,16 @@ function fetch_data(word, callback) {
             callback(null);
         }
     });
-
 }
-
-function get_definition(word, callback) {
-    if(definition_cache[word] !== undefined) {
-        callback(definition_cache[word]);
-    }
-    else {
-        queue.push(word, function(data) {
-            callback(definition_cache[word]);
-        });
-    }
-}
-
-
-function get_difficulty(word, callback) {
-    if(difficulty_cache[word] !== undefined) {
-        callback(difficulty_cache[word]);
-    }
-    else {
-        queue.push(word, function(data) {
-            callback(difficulty_cache[word]);
-        });
-    }
-}
-
-
-app.get('/get_definition', function(req, resp) {
-    get_definition(req.query.word, function(definition) {
-        resp.json({"definition": definition});
-    });
-});
-
-app.get('/get_difficulty', function(req, resp) {
-    get_difficulty(req.query.word, function(difficulty) {
-        resp.json({"difficulty": difficulty});
-    });
-});
-
-//Use post requests to handle large numbers of words
-app.post('/get_difficulties', function(req, resp) {
-    var words = JSON.parse(req.body.words);
-    var dict = {};
-    var count = 0;
-    for(var i=0; i<words.length; i++) {
-        get_difficulty(words[i], (function(index) { return function(difficulty) {
-            dict[words[index]] = difficulty;
-            count++;
-            if(count === words.length) {
-                // all results ready
-                resp.json(dict);
-            }
-        } })(i));
-    }
-});
 
 /* Input: word
- * Output: {synonym: (synonym of word with low difficulty rating
- *                    OR empty string if no synonyms found) }
+ * Output: Callback on (synonym of word with low difficulty rating
+ *                      OR empty string if no synonyms found)
  * TODO: Figure out better way to get best synonym -- for example, the word
  *       "hit" can be either a verb or a noun
  */
-app.get('/get_synonym', function(req, resp) {
-  url = 'http://www.thesaurus.com/browse/' + req.query.word;
+function fetch_synonym(word, callback) {
+  url = 'http://www.thesaurus.com/browse/' + word;
 
   request(url, function(error, inner_resp, html){
     if(!error) {
@@ -153,14 +104,84 @@ app.get('/get_synonym', function(req, resp) {
 
           count++;
           if (count === synonyms.length) {
-            resp.json({'synonym': min_difficult_synonym});
+            synonym_cache[word] = min_difficult_synonym;
+            callback(min_difficult_synonym);
           }
         }})(i));
       }
     }
     else {
-      resp.json({'error': error});
+      callback(null);
     }
+  });
+}
+
+function get_definition(word, callback) {
+    if(definition_cache[word] !== undefined) {
+        callback(definition_cache[word]);
+    }
+    else {
+        dictionary_queue.push(word, function(data) {
+            callback(definition_cache[word]);
+        });
+    }
+}
+
+
+function get_difficulty(word, callback) {
+    if(difficulty_cache[word] !== undefined) {
+        callback(difficulty_cache[word]);
+    }
+    else {
+        dictionary_queue.push(word, function(data) {
+            callback(difficulty_cache[word]);
+        });
+    }
+}
+
+function get_synonym(word, callback) {
+  if (synonym_cache[word] !== undefined) {
+    callback(synonym_cache[word]);
+  }
+  else {
+    synonym_queue.push(word, function(data) {
+      callback(synonym_cache[word]);
+    });
+  }
+}
+
+app.get('/get_definition', function(req, resp) {
+    get_definition(req.query.word, function(definition) {
+        resp.json({"definition": definition});
+    });
+});
+
+app.get('/get_difficulty', function(req, resp) {
+    get_difficulty(req.query.word, function(difficulty) {
+        resp.json({"difficulty": difficulty});
+    });
+});
+
+//Use post requests to handle large numbers of words
+app.post('/get_difficulties', function(req, resp) {
+    var words = JSON.parse(req.body.words);
+    var dict = {};
+    var count = 0;
+    for(var i=0; i<words.length; i++) {
+        get_difficulty(words[i], (function(index) { return function(difficulty) {
+            dict[words[index]] = difficulty;
+            count++;
+            if(count === words.length) {
+                // all results ready
+                resp.json(dict);
+            }
+        } })(i));
+    }
+});
+
+app.get('/get_synonym', function(req, resp) {
+  get_synonym(req.query.word, function(synonym) {
+    resp.json({'synonym': synonym});
   });
 });
 
