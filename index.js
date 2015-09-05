@@ -89,8 +89,11 @@ app.get('/get_difficulties', function(req, resp) {
     }
 });
 
-// TODO: Figure out better way to get best synonym -- for example, the word
-//       "hit" can be either a verb or a noun
+/* Input: word
+ * Output: {synonym: (synonym of word with low difficulty rating) }
+ * TODO: Figure out better way to get best synonym -- for example, the word
+ *       "hit" can be either a verb or a noun
+ */
 app.get('/get_synonym', function(req, resp) {
   url = "http://www.thesaurus.com/browse/" + req.query.word;
 
