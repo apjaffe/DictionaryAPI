@@ -5,6 +5,12 @@ var app = express();
 
 app.set('port', (process.env.PORT || 5000));
 
+var bodyParser = require('body-parser')
+app.use( bodyParser.json() );       // to support JSON-encoded bodies
+app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
+  extended: true
+})); 
+
 app.use(express.static(__dirname + '/public'));
 
 // views is directory for all template files
@@ -73,15 +79,16 @@ app.get('/get_difficulty', function(req, resp) {
     });
 });
 
-app.get('/get_difficulties', function(req, resp) {
-    var words = JSON.parse(req.query.words);
+//Use post requests to handle large numbers of words
+app.post('/get_difficulties', function(req, resp) {
+    var words = JSON.parse(req.body.words);
     var dict = {};
     var count = 0;
     for(var i=0; i<words.length; i++) {
         get_difficulty(words[i], (function(index) { return function(difficulty) {
             dict[words[index]] = difficulty;
             count++;
-            if(count == words.length) {
+            if(count === words.length) {
                 // all results ready
                 resp.json(dict);
             }
@@ -89,15 +96,16 @@ app.get('/get_difficulties', function(req, resp) {
     }
 });
 
-app.get('/get_definitions', function(req, resp) {
-    var words = JSON.parse(req.query.words);
+//Use post requests to handle large numbers of words
+app.post('/get_definitions', function(req, resp) {
+    var words = JSON.parse(req.body.words);
     var dict = {};
     var count = 0;
     for(var i=0; i<words.length; i++) {
         get_definition(words[i], (function(index) { return function(definition) {
             dict[words[index]] = definition;
             count++;
-            if(count == words.length) {
+            if(count === words.length) {
                 // all results ready
                 resp.json(dict);
             }
