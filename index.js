@@ -26,8 +26,10 @@ var difficulty_cache = {};
 var definition_cache = {};
 var synonym_cache = {};
 
-var dictionary_queue = async.queue(fetch_dictionary_data, 10); // Run ten simultaneous scrapes
-var synonym_queue = async.queue(fetch_synonym, 10);
+var PARALLELISM = 100;
+
+var dictionary_queue = async.queue(fetch_dictionary_data, PARALLELISM); // Run ten simultaneous scrapes
+var synonym_queue = async.queue(fetch_synonym, PARALLELISM);
 
 dictionary_queue.drain = function() {
     console.log("All dictionary data is fetched");
