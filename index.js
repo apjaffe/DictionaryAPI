@@ -30,8 +30,26 @@ app.get('/get_difficulty', function(req, resp) {
     });
 });
 
+// TODO: Figure out better way to get best synonym -- for example, the word
+//       "hit" can be either a verb or a noun
+app.get('/get_synonym', function(req, resp) {
+  url = "http://www.thesaurus.com/browse/" + req.query.word;
+
+  request(url, function(error, inner_resp, html){
+    if(!error) {
+      var $ = cheerio.load(html);
+      var synonyms = [];
+      $('.relevancy-list ul').find('li .text').each(function(idx, elem) {
+        synonyms[idx] = $(this).text()
+      });
+      resp.json({"synonyms": synonyms});
+    }
+    else {
+      resp.json({"error": error});
+    }
+  });
+});
+
 app.listen(app.get('port'), function() {
   console.log('Node app is running on port', app.get('port'));
 });
-
-
