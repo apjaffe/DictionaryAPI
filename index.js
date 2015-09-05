@@ -16,26 +16,56 @@ app.get('/', function(request, response) {
 });
 
 var difficulty_cache = {};
+var definition_cache = {};
 
-function get_difficulty(word, callback) {
-    if(difficulty_cache[word] !== undefined) {
-        callback(difficulty_cache[word]);
-    }
-
+function fetch_data(word, callback) {
     var url = "http://dictionary.reference.com/browse/" + word;
-
     request(url, function(error, inner_resp, html){
         if(!error){
             var $ = cheerio.load(html);
             var difficulty = $('#difficulty-box').attr("data-difficulty");
+            var definition = $('.def-content').first().text();
             difficulty_cache[word] = difficulty;
-            callback(difficulty);
+            definition_cache[word] = definition;
+            var data = {"difficulty": difficulty, "definition": definition};
+            callback(data);
         }
         else {
             callback(null);
         }
     });
+
 }
+
+function get_definition(word, callback) {
+    if(definition_cache[word] !== undefined) {
+        callback(definition_cache[word]);
+    }
+    else {
+        fetch_data(word, function(data) {
+            callback(data.definition);
+        });
+    }
+}
+
+
+function get_difficulty(word, callback) {
+    if(difficulty_cache[word] !== undefined) {
+        callback(difficulty_cache[word]);
+    }
+    else {
+        fetch_data(word, function(data) {
+            callback(data.difficulty);
+        });
+    }
+}
+
+
+app.get('/get_definition', function(req, resp) {
+    get_definition(req.query.word, function(definition) {
+        resp.json({"definition": definition});
+    });
+});
 
 app.get('/get_difficulty', function(req, resp) {
     get_difficulty(req.query.word, function(difficulty) {
@@ -99,6 +129,21 @@ app.get('/get_synonym', function(req, resp) {
       resp.json({"error": error});
     }
   });
+
+app.get('/get_definitions', function(req, resp) {
+    var words = JSON.parse(req.query.words);
+    var dict = {};
+    var count = 0;
+    for(var i=0; i<words.length; i++) {
+        get_definition(words[i], (function(index) { return function(definition) {
+            dict[words[index]] = definition;
+            count++;
+            if(count == words.length) {
+                // all results ready
+                resp.json(dict);
+            }
+        }})(i));
+    }
 });
 
 app.listen(app.get('port'), function() {
