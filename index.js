@@ -129,6 +129,7 @@ app.get('/get_synonym', function(req, resp) {
       resp.json({"error": error});
     }
   });
+});
 
 app.get('/get_definitions', function(req, resp) {
     var words = JSON.parse(req.query.words);
