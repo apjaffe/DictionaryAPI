@@ -84,19 +84,23 @@ function fetch_synonym(word, callback) {
             var $ = cheerio.load(html);
             var synonyms = [];
 
-            /* Populate 'synonyms' with all synonyms of highest relevance */
-            $('.relevancy-list ul').find('li a').filter(function(idx, elem) {
-                var data = $(this).attr('data-category');
-                return !!data && JSON.parse(data).name === 'relevant-3';
-            }).each(function(idx, elem) {
+            var all_synonyms = $('.relevancy-list ul').find('li a');
+
+            function populate_synonyms_from_link(idx, elem) {
                 synonyms[idx] = copy_string($(this).find('.text').text());
-            });
+            }
+
+            /* Populate 'synonyms' with all synonyms of highest relevance */
+            all_synonyms.filter(function(idx, elem) {
+                var category = $(this).attr('data-category');
+                return !!category && JSON.parse(category).name === 'relevant-3';
+            }).each(populate_synonyms_from_link);
 
             /* If no highly relevant synonyms found, just get any synonyms */
             if (synonyms.length === 0) {
-                $('.relevancy-list ul').find('li .text').each(function(idx, elem) {
-                    synonyms[idx] = copy_string($(this).text());
-                });
+                all_synonyms.filter(function(idx, elem) {
+                    return $(this).attr('data-complexity') !== undefined;
+                }).each(populate_synonyms_from_link);
             }
 
             /* If no synonyms found at all, return empty string */
