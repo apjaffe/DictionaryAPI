@@ -2,6 +2,32 @@
 
 Backend for [this repository](https://github.com/erkyz/MyDictionary).
 
+## Functionality
+Finds difficulty ratings, definitions, and synonyms of words by DDOSing
+dictionary.com.
+
+## Endpoints
+* GET `/get_definition`
+  * key: word
+  * returns: {definition: (string)}
+* GET `/get_difficulty`
+  * key: word
+  * returns: {difficulty: (int)}
+* GET `/get_synonym
+  * key: word
+  * returns: {difficulty: (string)}
+* POST `/get_definitions`
+  * key: words (array of strings)
+  * returns: {(dict of key=word, val=(string))}
+* POST `/get_difficulties`
+  * key: words (array of strings)
+  * returns: {(dict of key=word, val=(int))}
+* POST `/get_synonyms`
+  * key: words (array of strings)
+  * returns: {(dict of key=word, val=(string))}
+
+(the bulk endpoints are post because GET urls become too long)
+
 # node-js-getting-started
 
 A barebones Node.js app using [Express 4](http://expressjs.com/).
