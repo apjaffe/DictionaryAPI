@@ -38,13 +38,22 @@ synonym_queue.drain = function() {
     console.log("All synonym data is fetched");
 };
 
+function copy_string(str) {
+    if(str === undefined || str === null) { 
+        return str; 
+    }
+    else {
+        return (' ' + str).replace(/^\s/, '');
+    }
+}
+
 function fetch_dictionary_data(word, callback) {
     var url = "http://dictionary.reference.com/browse/" + word;
     request(url, function(error, inner_resp, html){
         if(!error){
             var $ = cheerio.load(html);
-            var difficulty = $('#difficulty-box').attr("data-difficulty");
-            var definition = $('.def-content').first().text();
+            var difficulty = copy_string($('#difficulty-box').attr("data-difficulty"));
+            var definition = copy_string($('.def-content').first().text());
             if(difficulty) {
                 difficulty_cache[word] = difficulty;
             }
@@ -55,6 +64,7 @@ function fetch_dictionary_data(word, callback) {
             callback(data);
         }
         else {
+            console.log(error);
             callback(null);
         }
     });
@@ -76,15 +86,16 @@ function fetch_synonym(word, callback) {
 
             /* Populate 'synonyms' with all synonyms of highest relevance */
             $('.relevancy-list ul').find('li a').filter(function(idx, elem) {
-                return JSON.parse($(this).attr('data-category')).name === 'relevant-3';
+                var data = $(this).attr('data-category');
+                return !!data && JSON.parse(data).name === 'relevant-3';
             }).each(function(idx, elem) {
-                synonyms[idx] = $(this).find('.text').text();
+                synonyms[idx] = copy_string($(this).find('.text').text());
             });
 
             /* If no highly relevant synonyms found, just get any synonyms */
             if (synonyms.length === 0) {
                 $('.relevancy-list ul').find('li .text').each(function(idx, elem) {
-                    synonyms[idx] = $(this).text();
+                    synonyms[idx] = copy_string($(this).text());
                 });
             }
 
@@ -114,6 +125,7 @@ function fetch_synonym(word, callback) {
             }
         }
         else {
+            console.log(error);
             callback(null);
         }
     });
