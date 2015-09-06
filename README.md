@@ -3,8 +3,9 @@
 Backend for [this repository](https://github.com/erkyz/MyDictionary).
 
 ## Functionality
-Finds difficulty ratings, definitions, and synonyms of words by DDOSing
-dictionary.com.
+Finds difficulty ratings, definitions, and synonyms of words by sending
+requests to dictionary.com. Results are cached to avoid sending
+repeated requests.
 
 ## Endpoints
 * GET `/get_definition`
