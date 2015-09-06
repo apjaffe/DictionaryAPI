@@ -1,6 +1,6 @@
 # DictionaryAPI
 
-Backend for [this repository](https://github.com/erkyz/MyDictionary).
+Backend for [this repository](https://github.com/erkyz/lexicon).
 
 ## Functionality
 Finds difficulty ratings, definitions, and synonyms of words by sending
