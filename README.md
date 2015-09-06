@@ -26,7 +26,7 @@ dictionary.com.
   * key: words (array of strings)
   * returns: {(dict of key=word, val=(string))}
 
-(the bulk endpoints are post because GET urls become too long)
+(the bulk endpoints are POST because GET urls become too long)
 
 # node-js-getting-started
 
